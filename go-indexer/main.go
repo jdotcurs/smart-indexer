@@ -1,9 +1,12 @@
 package main
 
-func main() {
-	codeDir := "./your-codebase"
-	outputDir := "./output"
+import "fmt"
 
+func main() {
+	codeDir := "../../cobra"
+	outputDir := "../output"
+
+	fmt.Println("Parsing directory:", codeDir)
 	functions := ParseFunctions(codeDir)
 	for _, fn := range functions {
 		hash := HashFunction(fn.Code)
