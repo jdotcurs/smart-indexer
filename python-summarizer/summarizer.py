@@ -47,7 +47,7 @@ for fn_id, entry in summaries.items():
         debug_summaries[fn_id] = {
             "summary": summary,
             "hash": entry["hash"],
-            "file": entry.get("file", "[unknown file]")
+            "file": entry.get("path", "[unknown file]")
         }
 
         save_debug()

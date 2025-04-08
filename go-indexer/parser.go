@@ -1,6 +1,11 @@
 package main
 
-import "strings"
+import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+)
 
 type Function struct {
 	ID   string
@@ -8,22 +13,38 @@ type Function struct {
 	Path string
 }
 
-func ParseFunctions(path string) []Function {
-	// VERY basic: reads .go files and splits on "func"
-	// In real version, use Go parser for AST-level accuracy
+func ParseFunctions(root string) []Function {
 	var functions []Function
-	files := GetGoFiles(path)
+	files := GetGoFiles(root)
+
 	for _, file := range files {
-		content := ReadFile(file)
-		parts := strings.Split(content, "func ")
-		for i, part := range parts {
-			if i == 0 {
-				continue
-			}
-			snippet := "func " + part
-			id := GenerateID(snippet, file)
-			functions = append(functions, Function{ID: id, Code: snippet, Path: file})
+		src, err := os.ReadFile(file)
+		if err != nil {
+			continue // optionally log error
 		}
+
+		fset := token.NewFileSet()
+		node, err := parser.ParseFile(fset, file, src, parser.AllErrors)
+		if err != nil {
+			continue
+		}
+
+		ast.Inspect(node, func(n ast.Node) bool {
+			fn, ok := n.(*ast.FuncDecl)
+			if ok && fn.Body != nil {
+				start := fset.Position(fn.Pos()).Offset
+				end := fset.Position(fn.End()).Offset
+				code := string(src[start:end])
+				id := GenerateID(code, file)
+				functions = append(functions, Function{
+					ID:   id,
+					Code: code,
+					Path: file,
+				})
+			}
+			return true
+		})
 	}
+
 	return functions
 }
