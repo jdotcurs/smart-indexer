@@ -1,33 +1,25 @@
-import os
 import requests
-from dotenv import load_dotenv
 
-load_dotenv()
-api_key = os.getenv("OPENROUTER_API_KEY")
-
-headers = {
-    "Authorization": f"Bearer {api_key}",
-    "Content-Type": "application/json"
-}
+OLLAMA_URL = "http://localhost:11434/api/generate"
 
 def summarize_code(code):
     body = {
-        "model": "meta-llama/llama-4-maverick:free",
-        "messages": [
-            {"role": "system", "content": "You are a senior Go developer."},
-            {"role": "user", "content": f"Summarize this Go function:\n\n{code}"}
-        ]
+        "model": "llama3",
+        "prompt": f"Summarize this Go function:\n\n{code}",
+        "stream": False
     }
 
-    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=body)
-
     try:
+        response = requests.post(OLLAMA_URL, json=body)
+        response.raise_for_status()
         json_response = response.json()
-        if "choices" not in json_response:
+
+        if "response" not in json_response:
             print("❌ API error:", json_response)
             return "[ERROR: No summary received]"
-        return json_response["choices"][0]["message"]["content"].strip()
+
+        return json_response["response"].strip()
 
     except Exception as e:
-        print("❌ Failed to parse response:", response.text)
+        print("❌ Failed to parse response:", str(e))
         return f"[ERROR: {str(e)}]"
